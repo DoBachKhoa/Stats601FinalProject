@@ -1,2 +1,6 @@
+# Output file
 output/
+
+# Python virtual environment
 venv/
+.venv/
