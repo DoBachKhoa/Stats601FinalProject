@@ -4,3 +4,6 @@ output/
 # Python virtual environment
 venv/
 .venv/
+
+# Python notebook state file
+.ipynb_checkpoints/
