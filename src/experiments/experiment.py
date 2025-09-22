@@ -4,7 +4,6 @@ import math
 import random
 import warnings
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from sklearn.metrics import confusion_matrix
@@ -13,7 +12,7 @@ inverse = lambda X: np.linalg.inv(X)
 
 # Import implemented functions
 import sys
-sys.path.insert(1, '../algorithm')
+sys.path.insert(1, 'src/algorithm')
 from lda import VariationalInference, ParameterEstimation, ParameterEstimationExtended
 from utils import discreteNormal, discretePoisson
 
@@ -88,7 +87,7 @@ def run_experiment_parameter_estimation(
         ax[K].bar(words, alpha_hat @ beta_hat / np.sum(alpha))
         ax[K].set_title('Mean mixed distribution', fontsize=10)
         fig.suptitle(r'Plot of $\hat\beta_i$s. $\hat\alpha=$ ' + str(np.round(alpha_hat, 4)), fontsize=10, y=1.08)
-        plt.savefig('../../output/'+filename1, bbox_inches='tight', format='jpeg')
+        plt.savefig(filename1, bbox_inches='tight', format='jpeg')
         plt.close()
 
     # Plot alpha and beta
@@ -100,7 +99,7 @@ def run_experiment_parameter_estimation(
         ax[K].bar(words, alpha @ beta / np.sum(alpha))
         ax[K].set_title('Mean mixed distribution', fontsize=10)
         fig.suptitle(r'Plot of $\beta_i$s. $\alpha=$ ' + str(np.round(alpha, 4)), fontsize=10, y=1.08)
-        plt.savefig('../../output/'+filename2, bbox_inches='tight', format='jpeg')
+        plt.savefig(filename2, bbox_inches='tight', format='jpeg')
         plt.close()
 
     # Return fitted parameters
@@ -222,7 +221,7 @@ def run_experiment_perplexity(
         ax5.bar(words, dist3)
         ax5.set_title('Forth distribution', fontsize=10)
         fig.suptitle(r'Plot of groundtruth parameters and perplexity. $\alpha=$ ' + str(alpha), fontsize=10)
-        plt.savefig('../../output/'+filename, bbox_inches='tight', format='jpeg')
+        plt.savefig(filename, bbox_inches='tight', format='jpeg')
         plt.close()
 
     # Return fitted parameters
@@ -247,8 +246,8 @@ if __name__ == '__main__':
             num_iter_VI = 10,
             num_iter_NR = 3,
             num_iter_EM = 30,
-            filename1 = 'fig_fitted_param.jpg',
-            filename2 = 'fig_true_param.jpg',
+            filename1 = 'output/fig_fitted_param.jpg',
+            filename2 = 'output/fig_true_param.jpg',
             printing = True
         )
 
@@ -271,7 +270,7 @@ if __name__ == '__main__':
             num_iter_NR =3 ,
             num_iter_EM = 50,
             num_iter_MC = 200,
-            filename = 'fig_perplexity.jpg',
+            filename = 'output/fig_perplexity.jpg',
             printing = True
         )
 

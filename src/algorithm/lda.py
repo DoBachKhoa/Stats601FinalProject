@@ -5,7 +5,7 @@ from scipy.special import digamma, polygamma
 
 
 # Algorithm 1: Newton Raphson update
-def NewtonRaphson(alpha, g, h, z):
+def NewtonRaphson(alpha, g, h, z, safecheck=False):
     '''
     Newton Rahpson update in linear time for Hessian matrix with special structure.
     Algorithm 1 in the report.
@@ -16,30 +16,44 @@ def NewtonRaphson(alpha, g, h, z):
 
     Parameters
     ----------
-    alpha : array-like of length K
+    alpha : numpy array of length K
         K being the number of topics in the main algorithm
         array to update
-    g : array-like of length K
+    g : numpy array of length K
         computed gradient of alpha
-    h : array-like of length K
+    h : numpy array of length K
     z : float 
         h and z compose the hessian matrix H of alpha
         H = diag(h) + 1 @ z @ 1.T
+    safecheck : bool (default False)
+        correctness checking option
 
     Return
     ------
     array-like of length K
         updated value of alpha
     '''
+    # Type check
+    if safecheck:
+        narray = type(np.array([0.]))
+        if not isinstance(alpha, narray): raise ValueError('alpha has to have type numpy.array')
+        if not isinstance(g, narray): raise ValueError('g has to have type numpy.array')
+        if not isinstance(h, narray): raise ValueError('h has to have type numpy.array')
+        if not isinstance(z, float): raise ValueError('z has to be a float')
+        if not alpha.ndim == g.ndim == h.ndim == 1:
+            raise ValueError('alpha, g, h have to be 1D')
+        if not alpha.shape[0] == g.shape[0] == h.shape[0]:
+            raise ValueError('alpha, g, h have to have simmilar length')
+
     # Calculates c in linear time
-    c = np.sum(g/h) / (1/z + np.sum(1./h))
+    c = np.sum(g/h) / (1/z + np.sum(1./h)) if (np.abs(z) > 1e-9) else 0.
 
     # Returns new alpha in linear time
     return alpha - ((g-c)/h)
 
 
 # Algorithm 2: Variational inference
-def VariationalInference(ww, alpha, beta, num_iter=10):
+def VariationalInference(ww, alpha, beta, num_iter=10, safecheck=False):
     '''
     Variational Inference algorithm that approximates the posteriors
         of a LDA model with parameter `alpha` and `beta`
@@ -69,10 +83,13 @@ def VariationalInference(ww, alpha, beta, num_iter=10):
         variational parameter
     '''
     # Dimension and shape check of ww, alpha, and beta:
-    if ww.ndim != 1: raise ValueError('ww has to be a 1D vector')
-    if alpha.ndim != 1: raise ValueError('alpha has to be a 1D vector')
-    if beta.ndim != 2: raise ValueError('beta has to be a 1D vector')
-    if alpha.shape[0] != beta.shape[0]: raise ValueError('alpha and beta length unmatched')
+    if safecheck:
+        if ww.ndim != 1: raise ValueError('ww has to be a 1D vector')
+        if alpha.ndim != 1: raise ValueError('alpha has to be a 1D vector')
+        if beta.ndim != 2: raise ValueError('beta has to be a 1D vector')
+        if alpha.shape[0] != beta.shape[0]: raise ValueError('alpha and beta length unmatched')
+        if type(num_iter) != int or num_iter < 1:
+            raise ValueError('Invalid number of iteration num_iter')
 
     # Initialization
     N = ww.shape[0]

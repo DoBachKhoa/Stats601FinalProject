@@ -3,7 +3,7 @@ import numpy as np
 
 # Import implemented functions
 import sys
-sys.path.insert(1, '../algorithm')
+sys.path.insert(1, 'src/algorithm')
 from lda import NewtonRaphson, VariationalInference
 from utils import discreteNormal, discretePoisson
 
