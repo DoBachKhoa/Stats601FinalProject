@@ -7,9 +7,29 @@ from scipy.special import digamma, polygamma
 # Algorithm 1: Newton Raphson update
 def NewtonRaphson(alpha, g, h, z):
     '''
-    Newton Rahpson update in linear time
-    for Hessian matrix with special structure
-    Algorithm 1 in the report
+    Newton Rahpson update in linear time for Hessian matrix with special structure.
+    Algorithm 1 in the report.
+    When the hessian matrix H has special structure
+        H = diag(h) + 1 @ z @ 1.T
+        then the NR update alpha <- alpha - H^(-1) @ g
+        can be computed in linear time.
+
+    Parameters
+    ----------
+    alpha : array-like of length K
+        K being the number of topics in the main algorithm
+        array to update
+    g : array-like of length K
+        computed gradient of alpha
+    h : array-like of length K
+    z : float 
+        h and z compose the hessian matrix H of alpha
+        H = diag(h) + 1 @ z @ 1.T
+
+    Return
+    ------
+    array-like of length K
+        updated value of alpha
     '''
     # Calculates c in linear time
     c = np.sum(g/h) / (1/z + np.sum(1./h))
@@ -21,13 +41,39 @@ def NewtonRaphson(alpha, g, h, z):
 # Algorithm 2: Variational inference
 def VariationalInference(ww, alpha, beta, num_iter=10):
     '''
-    Variational Inference algorithm
-    ww is the list of words
-    alpha is a K-vector of topic mixing prior
-    beta is a K-by-P matrix of word distribution per topic
-    num_iter: number of coordinate ascent loop
-    Algorithm 2 in the report
+    Variational Inference algorithm that approximates the posteriors
+        of a LDA model with parameter `alpha` and `beta`
+        given the words `ww`.
+    Algorithm 2 in the report.
+    Deterministically initiallize the variational parameters `gamma` and `phi`
+        and run coordinate ascent to optimize these variational parameters
+
+    Parameters
+    ----------
+    ww : array-like, shape (N,)
+        list of words with length N
+    alpha : array-like, shape (K,)
+        K being the number of topics in the model
+        vector of topic mixing prior
+    beta : array-like, shape (K, P)
+        P being the number of words in the dictionary
+        matrix of word distribution per topic
+    num_iter: int
+        number of coordinate ascent loop
+
+    Return
+    ------
+    gamma : array-like of shape (K,)
+        variational parameter
+    phi : array-like of shape (N, K)
+        variational parameter
     '''
+    # Dimension and shape check of ww, alpha, and beta:
+    if ww.ndim != 1: raise ValueError('ww has to be a 1D vector')
+    if alpha.ndim != 1: raise ValueError('alpha has to be a 1D vector')
+    if beta.ndim != 2: raise ValueError('beta has to be a 1D vector')
+    if alpha.shape[0] != beta.shape[0]: raise ValueError('alpha and beta length unmatched')
+
     # Initialization
     N = ww.shape[0]
     K, P = beta.shape
@@ -48,15 +94,34 @@ def VariationalInference(ww, alpha, beta, num_iter=10):
 # Algorithm 3: Parameter estimation
 def ParameterEstimation(wws, K, P, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10, printing = True):
     '''
-    Parameter estimation algorithm
-    wws is a list of vectors representing words
-    K is the number of topics
-    P is the number of words
-    the rest are hyper-parameters for numbers of iterations
-    returns fitted value of alpha and beta
-    Algorithm 3 in the report
-    '''
+    Variational MLE parameter estimation algorithm.
+    Implement Variational EM, together with Algorithm 1 and 2 in the report.
+    Algorithm 3 in the report.
+
+    Parameters
+    ----------
+    wws : array-like of array of integers
+        list of vectors representing words
+    K : int, positive
+        number of topics
+    P : int, positive
+        number of words
+    num_iter_VI : int (default 10)
+        number of VI iteration for algorithm 2
+    num_iter_NR : int (default 3)
+        number of Newton Raphson interation for algorithm 1
+    num_iter_EM : int (default 10)
+        number of EM iteration of the main loop
+    printing : bool (default True)
+        option to print out the loading bar using tqdm
     
+    Return
+    ------
+    array-like of shape (K,)
+        optimized estimation of alpha
+    array-like of shape (K, P)
+        optimized estimation of beta
+    '''
     # Initialization
     M = len(wws)
     alpha = np.random.exponential(scale=2., size=K)
@@ -69,7 +134,7 @@ def ParameterEstimation(wws, K, P, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10
         gammas = []
         phis = []
         for ww in wws:
-            gamma, phi = VariationalInference(ww, alpha, beta)
+            gamma, phi = VariationalInference(ww, alpha, beta, num_iter=num_iter_VI)
             gammas.append(gamma)
             phis.append(phi)
 
@@ -98,8 +163,28 @@ def NLogLikelihood(ww, alpha, beta, num_iter=32):
     '''
     Function that calculates the negative log-likelihood of a document (or a set of words)
     with respect to an estimated LDA model
-    Returns a positive number. The lower the nll is the better
+    Use Monte Carlo to estimate the log-likelihood.
+
+    Parameters
+    ----------
+    ww : array-like, shape (N,)
+        array of integer representing the set of words in the
+    alpha : array-like, shape (K,)
+        K being the number of topics in the model
+        vector of topic mixing prior
+    beta : array-like, shape (K, P)
+        P being the number of words in the dictionary
+        matrix of word distribution per topic
+    num_iter : int, positive
+        number of Monte Carlo iteration
+
+    Return
+    ------
+    float, positive
+        NLogLikelihood of the word list.
+        The lower the nll is the better.
     '''
+
     # Initialization
     N = ww.shape[0]
     K, P = beta.shape
@@ -118,10 +203,27 @@ def NLogLikelihood(ww, alpha, beta, num_iter=32):
 def Perplexity(wws, alpha, beta, num_iter=32):
     '''
     Function that calculates the perplexity test dataset
-    with respect to an estimated LDA model 
+        with respect to an estimated LDA model 
     Returns a positive number. The lower the perplexity is the better
-    with random guessing the Perplexity should be P
+        with random guessing the Perplexity should be P
+
+    Parameters
+    ----------
+    ww : array-like, shape (N,)
+        list of words with length N
+    alpha : array-like, shape (K,)
+        K being the number of topics in the model
+        vector of topic mixing prior
+    beta : array-like, shape (K, P)
+        P being the number of words in the dictionary
+        matrix of word distribution per topic
+    num_iter : int, positive
+        number of iteration 
     '''
+    # Type and positivity check on num_iter
+    if type(num_iter) != int: raise ValueError('num_iter has to be integer')
+    if num_iter < 1: raise ValueError('num_iter has to be positive')
+
     # Initialization
     nom = 0.
     denom = 0
@@ -139,6 +241,38 @@ def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_
     '''
     Parameter estimation algorithm
     with perplexity being calculated on holdout per each EM iteration
+
+    Parameters
+    ----------
+    wws : array-like of array of integers
+        list of vectors representing words
+    K : int, positive
+        number of topics
+    P : int, positive
+        number of words
+    holdouts: array-like of array of integers
+        list of holdout documents
+    num_iter_MC : int (default 32)
+        numbef of MC iteration used for perplexity calculation
+    num_iter_VI : int (default 10)
+        number of VI iteration for algorithm 2
+    num_iter_NR : int (default 3)
+        number of Newton Raphson interation for algorithm 1
+    num_iter_EM : int (default 10)
+        number of EM iteration of the main loop
+    printing : bool (default True)
+        option to print out the loading bar using tqdm
+    
+    Return
+    ------
+    array-like of shape (K,)
+        optimized estimation of alpha
+    array-like of shape (K, P)
+        optimized estimation of beta
+    array-like of length of that of holdouts
+        each element is a list of length num_iter_EM
+        representing perplexity of that holdout document
+        as a function of time.
     '''
     
     # Initialization
