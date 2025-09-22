@@ -250,8 +250,9 @@ def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_
         number of topics
     P : int, positive
         number of words
-    holdouts: array-like of array of integers
-        list of holdout documents
+    holdouts: array-like of array of array of integers
+        list of holdout dataset
+        each dataset is a list of documents
     num_iter_MC : int (default 32)
         numbef of MC iteration used for perplexity calculation
     num_iter_VI : int (default 10)
@@ -271,7 +272,7 @@ def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_
         optimized estimation of beta
     array-like of length of that of holdouts
         each element is a list of length num_iter_EM
-        representing perplexity of that holdout document
+        representing perplexity of that holdout dataset
         as a function of time.
     '''
     
