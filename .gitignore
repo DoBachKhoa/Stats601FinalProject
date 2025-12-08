@@ -7,3 +7,7 @@ venv/
 
 # Python notebook state file
 .ipynb_checkpoints/
+
+# DS Store
+.DS_Store
+src/.DS_Store

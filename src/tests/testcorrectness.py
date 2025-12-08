@@ -4,8 +4,8 @@ import numpy as np
 # Import implemented functions
 import sys
 sys.path.insert(1, 'src/algorithm')
-from lda import NewtonRaphson, VariationalInference
-from utils import discreteNormal, discretePoisson
+from src.algorithm.ldaVI import NewtonRaphson, VariationalInference
+from src.algorithm.utils import discreteNormal, discretePoisson
 
 '''
 Test function correctness of Algorithm 1: Newton Raphson iteration algorithm
