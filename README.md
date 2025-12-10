@@ -5,11 +5,10 @@ taken at the University of Michigan in Spring 2025 term.
 Implement and run the Variational Inference fitting algorithm for LDA
 as describe in the Latent Dirichlet Allocation paper by Blei et. al.
 
-Run the test file with `python3 -m pytest src/experiments/testcorrectness.py`.
-Run the experiments with `python3 src/experiments/experiment.py`.
+Available make commands:
 
-The dependencies are numpy, matplotlib, sklearn, scipy and tqdm. To make sure, 
-create a virtual environment with `python3 -m venv venv`. Activate virtual 
-environment with `source venv/bin/activate` and run 
-`pip3 install -r requirements.txt`. 
-Use `deactivate` to deactivate the virtual environment.
+* `make`: Run the parameter estimation experiment and the perplexity experiment.
+* `make notebooks`: Generate `.ipynb` notebook files to play with.
+* `make estimation` and `make perplexity`: run the two experiments separately.
+* `make profile-estimation` and `make profile-perplexity`: Run, with the cProfile profiler, the unvectorized and vectorized algorithm for the two experiments
+* `make clean`: Clean up outputs, virtual environments, and artifacts.
