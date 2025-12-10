@@ -2,6 +2,7 @@ joblib
 jupytext
 matplotlib
 numpy
+pyinstrument
 pytest
 scikit-learn
 scipy

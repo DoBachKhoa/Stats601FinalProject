@@ -1,6 +1,9 @@
 # Output file
 output/
 
+# Local file
+local/
+
 # Python virtual environment
 venv/
 .venv/
@@ -11,3 +14,6 @@ venv/
 # DS Store
 .DS_Store
 src/.DS_Store
+
+# Pytest
+.pytest_cache
