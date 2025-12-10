@@ -30,10 +30,8 @@ inverse = lambda X: np.linalg.inv(X)
 
 # %%
 # Import implemented functions
-import sys
-sys.path.insert(1, '../algorithm')
-from lda import VariationalInference, ParameterEstimation
-from utils import discreteNormal, discretePoisson
+from src.algorithm.ldaVI import VariationalInference, ParameterEstimation
+from src.algorithm.utils import discreteNormal, discretePoisson
 
 # %%
 # Data generation parameter for sub-experiment 1
