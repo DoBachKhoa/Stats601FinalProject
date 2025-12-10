@@ -105,11 +105,65 @@ def VariationalInference(ww, alpha, beta, num_iter=10, safecheck=False):
             phi[n] /= np.sum(phi[n])
         gamma = alpha + np.sum(phi, axis = 0, keepdims = False)
 
+    return gamma, phi
+
+# Algorithm 2: Variational inference (vectorized version)
+def VariationalInferenceVectorized(ww, alpha, beta, num_iter=10, safecheck=False):
+    '''
+    Variational Inference algorithm that approximates the posteriors
+        of a LDA model with parameter `alpha` and `beta`
+        given the words `ww`.
+    Vectorized version of the function `VariationalInference`.
+    Algorithm 2 in the report.
+    Deterministically initiallize the variational parameters `gamma` and `phi`
+        and run coordinate ascent to optimize these variational parameters
+
+    Parameters
+    ----------
+    ww : array-like, shape (N,)
+        list of words with length N
+    alpha : array-like, shape (K,)
+        K being the number of topics in the model
+        vector of topic mixing prior
+    beta : array-like, shape (K, P)
+        P being the number of words in the dictionary
+        matrix of word distribution per topic
+    num_iter: int
+        number of coordinate ascent loop
+
+    Return
+    ------
+    gamma : array-like of shape (K,)
+        variational parameter
+    phi : array-like of shape (N, K)
+        variational parameter
+    '''
+    # Dimension and shape check of ww, alpha, and beta:
+    if safecheck:
+        if ww.ndim != 1: raise ValueError('ww has to be a 1D vector')
+        if alpha.ndim != 1: raise ValueError('alpha has to be a 1D vector')
+        if beta.ndim != 2: raise ValueError('beta has to be a 1D vector')
+        if alpha.shape[0] != beta.shape[0]: raise ValueError('alpha and beta length unmatched')
+        if type(num_iter) != int or num_iter < 1:
+            raise ValueError('Invalid number of iteration num_iter')
+
+    # Initialization
+    N = ww.shape[0]
+    K = beta.shape[0]
+    gamma = np.full((K,),1/K)
+    phi = np.full((N, K),1/K)
+
+    # Coordinate ascent loop
+    for _ in range(num_iter):
+        phi = beta[:, ww].T*np.exp(digamma(gamma))
+        phi /= phi.sum(axis=1, keepdims=True)
+        gamma = alpha + np.sum(phi, axis = 0, keepdims = False)
+
     return gamma, phi    
 
 
 # Algorithm 3: Parameter estimation
-def ParameterEstimation(wws, K, P, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10, printing = True):
+def ParameterEstimation(wws, K, P, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10, printing = True, baseline=False):
     '''
     Variational MLE parameter estimation algorithm.
     Implement Variational EM, together with Algorithm 1 and 2 in the report.
@@ -131,6 +185,8 @@ def ParameterEstimation(wws, K, P, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10
         number of EM iteration of the main loop
     printing : bool (default True)
         option to print out the loading bar using tqdm
+    baseline : bool (default False)
+        use the baseline unvectorized version
     
     Return
     ------
@@ -151,7 +207,8 @@ def ParameterEstimation(wws, K, P, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10
         gammas = []
         phis = []
         for ww in wws:
-            gamma, phi = VariationalInference(ww, alpha, beta, num_iter=num_iter_VI)
+            gamma, phi = VariationalInference(ww, alpha, beta, num_iter=num_iter_VI) if baseline else \
+                         VariationalInferenceVectorized(ww, alpha, beta, num_iter=num_iter_VI)
             gammas.append(gamma)
             phis.append(phi)
 
@@ -216,8 +273,48 @@ def NLogLikelihood(ww, alpha, beta, num_iter=32):
         acc_llh += llh
 
     return - np.log(acc_llh/num_iter)
+
+# Perplexity calculation (vectorized version)
+def NLogLikelihoodVectorized(ww, alpha, beta, num_iter=32):
+    '''
+    Function that calculates the negative log-likelihood of a document (or a set of words)
+    with respect to an estimated LDA model.
+    Use Monte Carlo to estimate the log-likelihood.
+    Vectorized version.
+
+    Parameters
+    ----------
+    ww : array-like, shape (N,)
+        array of integer representing the set of words in the
+    alpha : array-like, shape (K,)
+        K being the number of topics in the model
+        vector of topic mixing prior
+    beta : array-like, shape (K, P)
+        P being the number of words in the dictionary
+        matrix of word distribution per topic
+    num_iter : int, positive
+        number of Monte Carlo iteration
+
+    Return
+    ------
+    float, positive
+        NLogLikelihood of the word list.
+        The lower the nll is the better.
+    '''
+
+    # Initialization
+    N = ww.shape[0]
+    K, P = beta.shape
+    acc_llh = 0.
+
+    # Main loop (vectorized)
+    theta = np.random.dirichlet(alpha, size=num_iter)
+    lls_iters = np.sum(np.log(theta @ beta[:, ww]), axis=1)
+    lls_iters_max = np.max(lls_iters)
+    acc_llh = np.sum(np.exp(lls_iters-lls_iters_max))
+    return - np.log(acc_llh/num_iter)-lls_iters_max
     
-def Perplexity(wws, alpha, beta, num_iter=32):
+def Perplexity(wws, alpha, beta, num_iter=32, baseline=False):
     '''
     Function that calculates the perplexity test dataset
         with respect to an estimated LDA model 
@@ -236,6 +333,8 @@ def Perplexity(wws, alpha, beta, num_iter=32):
         matrix of word distribution per topic
     num_iter : int, positive
         number of iteration 
+    baseline : bool (default False)
+        use the baseline unvectorized version
     '''
     # Type and positivity check on num_iter
     if type(num_iter) != int: raise ValueError('num_iter has to be integer')
@@ -247,14 +346,16 @@ def Perplexity(wws, alpha, beta, num_iter=32):
 
     # Main loop
     for ww in wws:
-        nom += NLogLikelihood(ww, alpha, beta, num_iter)
+        nom += NLogLikelihood(ww, alpha, beta, num_iter) if baseline else \
+               NLogLikelihoodVectorized(ww, alpha, beta, num_iter)
         denom += ww.shape[0]
 
     return np.exp(nom/denom)
 
 
 # Parameter estimation with calculating perplexity metric
-def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10, printing = True):
+def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_VI=10, num_iter_NR=3, num_iter_EM=10, \
+                                printing = True, baseline=False):
     '''
     Parameter estimation algorithm
     with perplexity being calculated on holdout per each EM iteration
@@ -280,6 +381,8 @@ def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_
         number of EM iteration of the main loop
     printing : bool (default True)
         option to print out the loading bar using tqdm
+    baseline : bool (default False)
+        use the baseline unvectorized version
     
     Return
     ------
@@ -306,7 +409,8 @@ def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_
         gammas = []
         phis = []
         for ww in wws:
-            gamma, phi = VariationalInference(ww, alpha, beta)
+            gamma, phi = VariationalInference(ww, alpha, beta, num_iter=num_iter_VI) if baseline else \
+                         VariationalInferenceVectorized(ww, alpha, beta, num_iter=num_iter_VI)
             gammas.append(gamma)
             phis.append(phi)
 
@@ -329,7 +433,7 @@ def ParameterEstimationExtended(wws, K, P, holdouts, num_iter_MC = 32, num_iter_
 
         # Calculate Perplexity
         for i in range(len(holdouts)):
-            perplexity[i].append(Perplexity(holdouts[i], alpha, beta, num_iter_MC))
+            perplexity[i].append(Perplexity(holdouts[i], alpha, beta, num_iter_MC, baseline=baseline))
 
     return alpha, beta, perplexity
     

@@ -78,11 +78,12 @@ def discretePoisson(P, lam=1., n_0=0, reverse=False):
     # Type check for P , lam and n_0
     if type(P) != int: raise ValueError('P has to be an integer')
     if P <= 0: raise ValueError('P has to be a positive integer')
-    if type(lam) != float: raise ValueError('`lam` variable has to be a float')
+    if type(lam) not in [float, int]: raise ValueError('`lam` variable has to be a float')
     if lam <= 1e-9: raise ValueError('`lam` has to be positive')
     if type(n_0) != int: raise ValueError('n_0 has to be an integer')
     if n_0 < 0: raise ValueError('Offset value n_0 has to be nonnegative')
-    if type(reverse) != bool: raise ValueError('`reverse` is not a boolean')
+    if type(reverse) != bool and (reverse not in [0, 1]):
+        raise ValueError('`reverse` is not a boolean')
 
     # Calculate the P-way categorical distribution probabilities
     output = [(lam**(n_0+i))/math.factorial(n_0+i) for i in range(P)]
@@ -90,3 +91,7 @@ def discretePoisson(P, lam=1., n_0=0, reverse=False):
     output = np.array(output)
     output /= np.sum(output)
     return output
+
+# Trivial discrete pobability
+def discreteInput(l):
+    return np.array(l)/np.sum(l)
