@@ -11,10 +11,10 @@ PIP := python3 -m pip
 VENV_DIR := .venv
 VENV_PY := $(VENV_DIR)/bin/$(PY)
 VENV_PIP := $(VENV_DIR)/bin/$(PIP)
-RESULT_DIR := outputs
+RESULT_DIR := output
 
 # Default target first
-all : $(VENV_DIR)
+all : $(VENV_DIR) run-estimation run-perplexity
 
 # Virtual environment
 $(VENV_DIR) : requirements.txt # check requirement changes
@@ -34,27 +34,27 @@ make-notebooks : $(VENV_DIR)
 
 profile-estimation : $(VENV_DIR)
 	mkdir -p profile
-	mkdir -p #(RESULT_DIR)
+	mkdir -p $(RESULT_DIR)
 	$(VENV_DIR)/bin/pyinstrument -m src.scripts.run_param_est -o output/temp_est1.jpg -u > profile/profile_estimation.txt
 	$(VENV_DIR)/bin/pyinstrument -m src.scripts.run_param_est -o output/temp_est2.jpg >> profile/profile_estimation.txt
 
 profile-perplexity : $(VENV_DIR)
 	mkdir -p profile
-	mkdir -p #(RESULT_DIR)
+	mkdir -p $(RESULT_DIR)
 	$(VENV_DIR)/bin/pyinstrument -m src.scripts.run_perplexity_exp -o output/temp_per1.jpg -u > profile/profile_perplexity.txt
 	$(VENV_DIR)/bin/pyinstrument -m src.scripts.run_perplexity_exp -o output/temp_per2.jpg >> profile/profile_perplexity.txt
 
 run-estimation : $(VENV_DIR)
-	mkdir -p #(RESULT_DIR)
-	$(VENV_DIR)/bin/pyinstrument -m src.scripts.run_param_est -o output/fitted_parameters.jpg
+	mkdir -p $(RESULT_DIR)
+	$(VENV_PY) -m src.scripts.run_param_est -o output/fitted_parameters.jpg
 
 run-perplexity : $(VENV_DIR)
-	mkdir -p #(RESULT_DIR)
+	mkdir -p $(RESULT_DIR)
 	$(VENV_PY) -m src.scripts.run_perplexity_exp -o output/plot_perplexity.jpg
 
 
 # Clean ups
-clean : clean-env clean-generated
+clean : clean-venv clean-generated
 
 clean-generated : clean-outputs clean-artifacts clean-notebooks
 
@@ -73,6 +73,6 @@ clean-outputs :
 clean-artifacts : 
 	@find . -type f -name "prof.pstats" -delete
 	@find . -type f -name "*.pyc" -delete
-	@find . -type d -name "__pycache__" -delete
-	@find . -type d -name ".ipynb_checkpoints" -delete
+	@find . -type d -name "__pycache__" -exec rm -rf {} +
+	@find . -type d -name ".ipynb_checkpoints" -exec rm -rf {} +
 	@find . -type d -name ".pytest_cache"  -exec rm -rf {} +
